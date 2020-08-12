@@ -68,3 +68,9 @@ rw : readWrite 读写
 
 docker run -d -P --name nginx03 /etc/nginx:rw nginx
 ```
+
+### 数据卷容器
+```shell script
+--volumes-from 容器
+备份机制, 双向拷贝的概念
+```
