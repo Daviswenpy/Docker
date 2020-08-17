@@ -224,3 +224,115 @@ Options:
 ```
 
 ### [Docker 四种网络模式](https://juejin.im/post/6844903756920782855)
+
+### Redis集群实战
+```shell script
+# 创建redis网络
+
+# 运行脚本配置redis
+
+for port in $(seq 1 6); \
+do \
+mkdir -p /mydata/redis/node-${port}/conf
+touch /mydata/redis/node-${port}/conf/redis.conf
+cat << EOF >/mydata/redis/node-${port}/conf/redis.conf
+port 6379
+bind 0.0.0.0
+cluster-enabled yes
+cluster-config-file nodes.conf
+cluster-node-timeout 5000
+cluster-announce-ip 172.38.0.1${port}
+cluster-announce-port 6379
+cluster-announce-bus-port 16379
+appendonly yes
+EOF
+done
+```
+
+```shell script
+# 启动redis
+[root@Melon redis]# docker run -p 6371:6379 -p 16371:16379 --name redis1 \
+> -v /mydata/redis/node-1/data:/data \
+> -v /mydata/redis/node-1/conf/redis.conf:/etc/redis/redis.conf \
+> -d  --net redis --ip 172.38.0.11 redis redis-server /etc/redis/redis.conf
+
+
+docker run -p 6372:6379 -p 16372:16379 --name redis2 \
+-v /mydata/redis/node-2/data:/data \
+-v /mydata/redis/node-2/conf/redis.conf:/etc/redis/redis.conf \
+-d  --net redis --ip 172.38.0.12 redis redis-server /etc/redis/redis.conf
+
+docker run -p 6373:6379 -p 16373:16379 --name redis3 \
+-v /mydata/redis/node-3/data:/data \
+-v /mydata/redis/node-3/conf/redis.conf:/etc/redis/redis.conf \
+-d  --net redis --ip 172.38.0.13 redis redis-server /etc/redis/redis.conf
+
+docker run -p 6374:6379 -p 16374:16379 --name redis4 \
+-v /mydata/redis/node-4/data:/data \
+-v /mydata/redis/node-4/conf/redis.conf:/etc/redis/redis.conf \
+-d  --net redis --ip 172.38.0.14 redis redis-server /etc/redis/redis.conf
+
+docker run -p 6375:6379 -p 16375:16379 --name redis5 \
+-v /mydata/redis/node-5/data:/data \
+-v /mydata/redis/node-5/conf/redis.conf:/etc/redis/redis.conf \
+-d  --net redis --ip 172.38.0.15 redis redis-server /etc/redis/redis.conf
+
+docker run -p 6376:6379 -p 16376:16379 --name redis6 \
+-v /mydata/redis/node-6/data:/data \
+-v /mydata/redis/node-6/conf/redis.conf:/etc/redis/redis.conf \
+-d  --net redis --ip 172.38.0.16 redis redis-server /etc/redis/redis.conf
+```
+
+```shell script
+# 创建集群
+
+ redis-cli --cluster create 172.38.0.11:6379 172.38.0.12:6379 172.38.0.13:6379 172.38.0.14:6379 172.38.0.15:6379 172.38.0.16:6379 --cluster-replicas 1
+>>> Performing hash slots allocation on 6 nodes...
+Master[0] -> Slots 0 - 5460
+Master[1] -> Slots 5461 - 10922
+Master[2] -> Slots 10923 - 16383
+Adding replica 172.38.0.15:6379 to 172.38.0.11:6379
+Adding replica 172.38.0.16:6379 to 172.38.0.12:6379
+Adding replica 172.38.0.14:6379 to 172.38.0.13:6379
+M: a31c555b40ec418419a4bb833e23145ff6328c46 172.38.0.11:6379
+   slots:[0-5460] (5461 slots) master
+M: 2caf748a46089a8c5f3fdeb0cc23050c6ba7cee3 172.38.0.12:6379
+   slots:[5461-10922] (5462 slots) master
+M: 77eba1e2b856135fb654c5578b1f2151c3134153 172.38.0.13:6379
+   slots:[10923-16383] (5461 slots) master
+S: bcb4c7628d9450daee092b559179d732014f6e92 172.38.0.14:6379
+   replicates 77eba1e2b856135fb654c5578b1f2151c3134153
+S: 8a1a49c50bd46ca35ee5c3b9a09058d093783fbb 172.38.0.15:6379
+   replicates a31c555b40ec418419a4bb833e23145ff6328c46
+S: 8b133c1de4aa89a0aa0245254f28ca7c8774f390 172.38.0.16:6379
+   replicates 2caf748a46089a8c5f3fdeb0cc23050c6ba7cee3
+Can I set the above configuration? (type 'yes' to accept): yes
+>>> Nodes configuration updated
+>>> Assign a different config epoch to each node
+>>> Sending CLUSTER MEET messages to join the cluster
+Waiting for the cluster to join
+...
+>>> Performing Cluster Check (using node 172.38.0.11:6379)
+M: a31c555b40ec418419a4bb833e23145ff6328c46 172.38.0.11:6379
+   slots:[0-5460] (5461 slots) master
+   1 additional replica(s)
+S: 8a1a49c50bd46ca35ee5c3b9a09058d093783fbb 172.38.0.15:6379
+   slots: (0 slots) slave
+   replicates a31c555b40ec418419a4bb833e23145ff6328c46
+M: 77eba1e2b856135fb654c5578b1f2151c3134153 172.38.0.13:6379
+   slots:[10923-16383] (5461 slots) master
+   1 additional replica(s)
+S: bcb4c7628d9450daee092b559179d732014f6e92 172.38.0.14:6379
+   slots: (0 slots) slave
+   replicates 77eba1e2b856135fb654c5578b1f2151c3134153
+M: 2caf748a46089a8c5f3fdeb0cc23050c6ba7cee3 172.38.0.12:6379
+   slots:[5461-10922] (5462 slots) master
+   1 additional replica(s)
+S: 8b133c1de4aa89a0aa0245254f28ca7c8774f390 172.38.0.16:6379
+   slots: (0 slots) slave
+   replicates 2caf748a46089a8c5f3fdeb0cc23050c6ba7cee3
+[OK] All nodes agree about slots configuration.
+>>> Check for open slots...
+>>> Check slots coverage...
+[OK] All 16384 slots covered.
+```
