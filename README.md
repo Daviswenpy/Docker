@@ -7,8 +7,8 @@ Docker实战
 
 ```shell script
 yum-config-manager \
-> --add-repo \
-> http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+--add-repo \
+http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 
 ```
 
@@ -36,6 +36,16 @@ rm -rf /var/lib/docker
 6. 配置阿里云容器镜像服务
 ```shell script
 登录阿里云 --> 容器镜像服务 ---> 镜像加速器
+
+
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": ["https://d8d977zt.mirror.aliyuncs.com"]
+}
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart docker
 ```
 
 ## [Docker 常用命令](./command.md)
@@ -47,3 +57,7 @@ rm -rf /var/lib/docker
 ## [DockerFile](./dockerfile.md)
 
 ## [Docker 网络](./dockerNet.md)
+
+## [Docker Compose](./compose.md)
+
+## [Docker Swarm](./swarm.md)
